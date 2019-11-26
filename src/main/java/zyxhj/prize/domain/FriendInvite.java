@@ -24,6 +24,10 @@ public class FriendInvite {
 	@RDSAnnField(column = RDSAnnField.ID)
 	public Long inviteUserId;
 	
+	//抽奖活动id
+	@RDSAnnField(column = RDSAnnField.ID)
+	public Long prizeId;
+	
 	//创建时间
 	@RDSAnnField(column = RDSAnnField.TIME)
 	public Date createTime;

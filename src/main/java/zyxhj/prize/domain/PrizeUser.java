@@ -28,9 +28,9 @@ public class PrizeUser {
 	@RDSAnnField(column = RDSAnnField.SHORT_TEXT)
 	public String userName;
 	
-	//分享标示
-	@RDSAnnField(column = RDSAnnField.SHORT_TEXT)
-	public String shareCode;
+	//用户手机号
+	@RDSAnnField(column = RDSAnnField.TEXT_PWD)
+	public String phoneNum;
 	
 	//创建时间
 	@RDSAnnField(column = RDSAnnField.TIME)
