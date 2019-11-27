@@ -1,5 +1,6 @@
 package zyxhj.prize.service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -8,8 +9,10 @@ import com.alibaba.druid.pool.DruidPooledConnection;
 
 import zyxhj.prize.domain.FriendInvite;
 import zyxhj.prize.domain.PrizeUser;
+import zyxhj.prize.domain.WinningList;
 import zyxhj.prize.repository.FriendInviteRepository;
 import zyxhj.prize.repository.PrizeUserRepository;
+import zyxhj.prize.repository.WinningListRepository;
 import zyxhj.utils.IDUtils;
 import zyxhj.utils.Singleton;
 import zyxhj.utils.api.APIResponse;
@@ -21,12 +24,14 @@ public class UserService extends Controller{
 	private DruidDataSource ds;
 	private PrizeUserRepository userRepository;
 	private FriendInviteRepository friendInviteRepository;
+	private WinningListRepository winningListRepository;
 	public UserService(String node) {
 		super(node);
 		try {
 			ds = DataSource.getDruidDataSource("rdsDefault.prop");
 			userRepository = Singleton.ins(PrizeUserRepository.class);
 			friendInviteRepository = Singleton.ins(FriendInviteRepository.class);
+			winningListRepository = Singleton.ins(WinningListRepository.class);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -73,6 +78,26 @@ public class UserService extends Controller{
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
 			return userRepository.get(conn, EXP.INS().key("user_id", userId));
+		}
+	}
+	
+	@POSTAPI( //
+			path = "getUserListByPrizeId", //
+			des = "查询参加本次抽奖的所有用户", //
+			ret = "" //
+	)
+	public List<PrizeUser> getUserListById(
+		@P(t = "抽奖活动id")Long PrizeId,
+		Integer count,
+		Integer offset
+	) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()) {
+			List<PrizeUser> userList = new ArrayList<PrizeUser>();
+			List<WinningList> winningList = winningListRepository.getList(conn, EXP.INS().key("prize_id", PrizeId), count, offset, "winning_user_id");
+			for (WinningList winning : winningList) {
+				userList.add(this.getUserById(winning.winningUserId));
+			}
+			return userList;
 		}
 	}
 	
