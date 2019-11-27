@@ -28,6 +28,7 @@ import zyxhj.utils.api.Controller;
 import zyxhj.utils.api.RC;
 import zyxhj.utils.data.DataSource;
 import zyxhj.utils.data.EXP;
+import zyxhj.utils.data.rds.RDSAnnField;
 
 public class PrizeService extends Controller{
 	private PrizeRepository prizeRepository;
@@ -179,6 +180,28 @@ public class PrizeService extends Controller{
 		    winningListRepository.update(conn, EXP.INS().and(EXP.INS().IN("winning_id", list.toArray())), winn,true);
 		}
 	}
+	@POSTAPI(//
+			path = "getWinningList", //
+			des = "查询抽奖记录记录", //
+			ret = "" //
+	)
+	public List<WinningList>  getWinningList(
+			@P(t = "抽奖id")Long PrizeId,
+			@P(t = "用户id",r= false)Long winningUserId,
+			@P(t = "状态",r= false)Byte winningStatus,
+			@P(t = "奖品id",r= false)Long productId,
+			@P(t = "奖品等级",r= false)Byte winningGrade,
+			@P(t = "是否中奖",r= false)Byte isWinning,
+			Integer count,
+			Integer offset
+	) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			EXP exp =  EXP.INS(false).key("prize_id", PrizeId).andKey("winning_user_id", winningUserId).andKey("winning_status", winningStatus)
+					.andKey("product_id", productId).andKey("winning_grade", winningGrade).andKey("is_winning", isWinning);
+			exp.append("ORDER BY winning_id ASC");
+			return winningListRepository.getList(conn,exp,count,offset);
+		}
+	}
 	/*
 	 * 创建抽奖记录
 	 */
@@ -257,30 +280,31 @@ public class PrizeService extends Controller{
 			return null;
 	}
 	public void payPrize(int num[],List<WinningList> winnings,DruidPooledConnection conn) throws Exception {
-		Long max = winnings.get(0).winningId;
-		Long min = winnings.get(winnings.size()-1).winningId;
+		int max = winnings.size();
+		int min = 1;
+		System.out.println(max+"**"+min);
 		List<Long> oneList = new ArrayList<Long>();
 		List<Long> twoList = new ArrayList<Long>();
 		List<Long> threeList = new ArrayList<Long>();
 		for(int i=0;i<num[0];i++) {
-			Long ranNum = (long) (Math.random()*(max-min)+min);
-			oneList.add(ranNum);
+			int ranNum = (int) (Math.random()*(max-min)+min);
+			oneList.add(winnings.get(ranNum).winningId);
 		}
 		for(int i=0;i<num[1];i++) {
-			Long ranNum = (long) (Math.random()*(max-min)+min);
-			if(oneList.contains(ranNum)) {
+			int ranNum = (int) (Math.random()*(max-min)+min);
+			if(oneList.contains(winnings.get(ranNum).winningId)) {
 				i--;
 				continue;
 			}
-			twoList.add(ranNum);
+			twoList.add(winnings.get(ranNum).winningId);
 		}
 		for(int i=0;i<num[2];i++) {
-			Long ranNum = (long) (Math.random()*(max-min)+min);
-			if(oneList.contains(ranNum)||twoList.contains(ranNum)) {
+			int ranNum = (int) (Math.random()*(max-min)+min);
+			if(oneList.contains(winnings.get(ranNum).winningId)||twoList.contains(winnings.get(ranNum).winningId)) {
 				i--;
 				continue;
 			}
-			threeList.add(ranNum);
+			threeList.add(winnings.get(ranNum).winningId);
 		}
 		setWinningStatus(1, oneList);
 		setWinningStatus(2, twoList);
