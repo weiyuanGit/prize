@@ -1,38 +1,55 @@
 package zyxhj.cn.Prize;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.io.IOException;
+import java.sql.SQLException;
 
-/**
- * Unit test for simple App.
- */
-public class AppTest 
-    extends TestCase
-{
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest( String testName )
-    {
-        super( testName );
-    }
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
+import com.alibaba.druid.pool.DruidPooledConnection;
 
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp()
-    {
-        assertTrue( true );
-    }
+import zyxhj.prize.repository.WinningListRepository;
+import zyxhj.prize.service.PrizeService;
+import zyxhj.utils.Singleton;
+import zyxhj.utils.data.DataSource;
+import zyxhj.utils.data.EXP;
+
+public class AppTest {
+	private static DruidPooledConnection conn;
+	private static PrizeService prizeService;
+	private static WinningListRepository winningListRepository;
+	@BeforeClass
+	public static void setUpBeforeClass() throws Exception {
+		try {
+			conn = DataSource.getDruidDataSource("rdsDefault.prop").getConnection();
+			prizeService = new PrizeService(null);
+			winningListRepository = Singleton.ins(WinningListRepository.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@AfterClass
+	public static void tearDownAfterClass() throws Exception {
+		conn.close();
+	}
+	@Test
+	public void te() {
+		try {
+//			Long n = 1L;
+//			for(int i=0;i<20;i++) {
+////				prizeService.createWinning(1001L, i+n);				
+//			}
+//			prizeService.payPrize(winningListRepository.getList(conn, EXP.INS().key("prize_id",1001), 500, 0),conn);
+//		System.out.println(winningListRepository.getList(conn,EXP.INS().key("prize_id",1001), 200, 0));
+			int[] num = {1,2,3};
+			prizeService.payPrize(num,winningListRepository.getList(conn, EXP.INS().key("prize_id", 1001), 500, 0),conn);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	@Test
+	public void tea() {}
 }

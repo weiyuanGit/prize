@@ -1,12 +1,22 @@
 package zyxhj.prize.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Set;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 
 import zyxhj.prize.domain.Prize;
+import zyxhj.prize.domain.TempPrize;
 import zyxhj.prize.domain.WinningList;
 import zyxhj.prize.repository.PrizeRepository;
 import zyxhj.prize.repository.PrizeUserRepository;
@@ -47,7 +57,7 @@ public class PrizeService extends Controller{
 		@P(t = "二等奖数量")int secondPrizeNum,
 		@P(t = "三等奖id")Long threePrizeId,
 		@P(t = "三等奖数量")int threePrizeNum,
-		@P(t = "指定用户中奖")Long prizeUserId,
+		@P(t = "指定用户中奖")String prizeUserId,
 		@P(t = "开奖方式")Byte prizeWay,
 		@P(t = "开奖时间")Long prizeTime,
 		@P(t = "抽奖说明")String prizeExplain,
@@ -79,6 +89,48 @@ public class PrizeService extends Controller{
 		}
 	}
 	@POSTAPI(//
+			path = "updatePrize", //
+			des = "修改抽奖", //
+			ret = "" //
+	)
+	public void updatePrize(
+		@P(t = "id")Long id,	
+		@P(t = "一等奖id",r = false)Long fristPrizeId,
+		@P(t = "一等奖数量",r = false)int fristPrizeNum,
+		@P(t = "二等奖id",r = false)Long secondPrizeId,
+		@P(t = "二等奖数量",r = false)int secondPrizeNum,
+		@P(t = "三等奖id",r = false)Long threePrizeId,
+		@P(t = "三等奖数量",r = false)int threePrizeNum,
+		@P(t = "指定用户中奖",r = false)String prizeUserId,
+		@P(t = "开奖方式",r = false)Byte prizeWay,
+		@P(t = "开奖时间",r = false)Long prizeTime,
+		@P(t = "抽奖说明",r = false)String prizeExplain,
+		@P(t = "发起人id",r = false)Long createUserId,
+		@P(t = "图文介绍",r = false)String imageText,
+		@P(t = "领奖方式",r = false)Byte receiveWay,
+		@P(t = "助力倍数",r = false)int helpTimes,
+		@P(t = "是否开启好友助力",r = false)Boolean friendHelp
+	) throws Exception {
+		Prize p = new Prize();
+		p.prizeId = IDUtils.getSimpleId();
+		p.fristPrizeId = fristPrizeId;
+		p.fristPrizeNum = fristPrizeNum;
+		p.secondPrizeId = secondPrizeId;
+		p.secondPrizeNum = secondPrizeNum;
+		p.prizeUserId = prizeUserId;
+		p.prizeTime = prizeTime;
+		p.prizeExplain = prizeExplain;
+		p.createUserId = createUserId;
+		p.imageText = imageText;
+		p.receiveWay = receiveWay;
+		p.helpTimes = helpTimes;
+		p.friendHelp = friendHelp;
+		p.createTime = new Date();
+		try(DruidPooledConnection conn = ds.getConnection()){
+			prizeRepository.update(conn, EXP.INS().key("prize_id", id), p, true);
+		}
+	}
+	@POSTAPI(//
 			path = "getPrizeList", //
 			des = "查询抽奖列表", //
 			ret = "" //
@@ -106,6 +158,50 @@ public class PrizeService extends Controller{
 			return prizeRepository.get(conn, EXP.INS().key("prize_id", id));
 		}
 	}
+	@POSTAPI(//
+			path = "getWinning", //
+			des = "查询抽奖记录详情", //
+			ret = "" //
+	)
+	public WinningList getWinning(
+		@P(t = "id")Long id
+	) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			return winningListRepository.get(conn, EXP.INS().key("winning_id", id));
+		}
+	}
+	public void setWinningStatus(int grade,List<Long> list) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			WinningList winn = new WinningList();
+		    winn.winningStatus = WinningList.STATUS_OPEN;
+		    winn.isWinning = true;
+		    winn.winningGrade = (byte)grade;
+		    winningListRepository.update(conn, EXP.INS().and(EXP.INS().IN("winning_id", list.toArray())), winn,true);
+		}
+	}
+	/*
+	 * 创建抽奖记录
+	 */
+	public WinningList createWinning(
+		@P(t = "抽奖信息id")Long prizeId,
+		@P(t = "用户id")Long userId
+	) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			WinningList w = new WinningList();
+			w.winningId = IDUtils.getSimpleId();
+			w.PrizeId = prizeId;
+			w.winningUserId = userId;
+			w.winningRate = 1;
+			w.winningStatus = WinningList.STATUS_OPEN;
+			w.isWinning = false;
+			w.productId = 1L;
+			w.winningGrade = 1;
+			w.createTime = new Date();
+			winningListRepository.insert(conn, w);
+			return w;
+		}
+	}
+	
 	
 	@POSTAPI(//
 			path = "clickPrize", //
@@ -127,33 +223,67 @@ public class PrizeService extends Controller{
 			}else if(winningListRepository.get(conn, EXP.INS().key("winning_user_id", userId).andKey("Prize_id", prizeId)) != null) {
 				return APIResponse.getNewFailureResp(new RC("fail", "你已经参加过了"));
 			}else {
-				WinningList w = new WinningList();
-				w.winningId = IDUtils.getSimpleId();
-				w.PrizeId = prizeId;
-				w.winningUserId = userId;
-				w.winningRate = 1;
-				w.winningStatus = WinningList.STATUS_OPEN;
-				w.isWinning = false;
-				w.productId = null;
-				w.winningGrade = null;
-				w.createTime = new Date();
-				winningListRepository.insert(conn, w);
-				return APIResponse.getNewSuccessResp(w);
+				return APIResponse.getNewSuccessResp(createWinning(prizeId,userId));
 			}
 		}
-		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+		@POSTAPI(//
+				path = "startPrize", //
+				des = "开始抽奖", //
+				ret = "" //
+		)
+		public APIResponse startPrize(
+			@P(t = "用户id")Long userId,
+			@P(t = "抽奖信息id")Long prizeId
+		) throws Exception {
+			try(DruidPooledConnection conn = ds.getConnection()){
+				//判断用户信息是否可以开奖
+				Prize prize = prizeRepository.get(conn, EXP.INS().key("prize_id", prizeId));
+				if(!prize.createUserId.equals(userId)) {
+					return APIResponse.getNewFailureResp(new RC("fail","你没有权限开奖"));
+				}else {
+					//抽奖
+					Prize p = new Prize();
+					p.prizeStatus = Prize.STATUS_CLOSE;
+					prizeRepository.update(conn, EXP.INS().key("prize_id", prizeId),p,true);//更改状态
+					if(p.prizeUserId != null && p.prizeUserId.length()>0) {//有用户指定中奖
+						
+					}
+					//抽奖
+					int[] num = {prize.fristPrizeNum,prize.secondPrizeNum,prize.threePrizeNum};
+					payPrize(num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId), 500, 0),conn);
+				}
+			}
+			return null;
+	}
+	public void payPrize(int num[],List<WinningList> winnings,DruidPooledConnection conn) throws Exception {
+		Long max = winnings.get(0).winningId;
+		Long min = winnings.get(winnings.size()-1).winningId;
+		List<Long> oneList = new ArrayList<Long>();
+		List<Long> twoList = new ArrayList<Long>();
+		List<Long> threeList = new ArrayList<Long>();
+		for(int i=0;i<num[0];i++) {
+			Long ranNum = (long) (Math.random()*(max-min)+min);
+			oneList.add(ranNum);
+		}
+		for(int i=0;i<num[1];i++) {
+			Long ranNum = (long) (Math.random()*(max-min)+min);
+			if(oneList.contains(ranNum)) {
+				i--;
+				continue;
+			}
+			twoList.add(ranNum);
+		}
+		for(int i=0;i<num[2];i++) {
+			Long ranNum = (long) (Math.random()*(max-min)+min);
+			if(oneList.contains(ranNum)||twoList.contains(ranNum)) {
+				i--;
+				continue;
+			}
+			threeList.add(ranNum);
+		}
+		setWinningStatus(1, oneList);
+		setWinningStatus(2, twoList);
+		setWinningStatus(3, threeList);
+	}
 }

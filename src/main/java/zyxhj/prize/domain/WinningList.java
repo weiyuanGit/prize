@@ -28,7 +28,7 @@ public class WinningList {
 	
 	//用户中奖率
 	@RDSAnnField(column = RDSAnnField.INTEGER)
-	public int winningRate;
+	public Integer winningRate;
 	
 	//状态
 	@RDSAnnField(column = RDSAnnField.BYTE)
@@ -54,7 +54,7 @@ public class WinningList {
 	public Date createTime;
 	
 	@AnnDicField(alias = "待开奖")
-	public static final Byte STATUS_OPEN = 0;
+	public static final Byte STATUS_WAITOPEN = 0;
 	@AnnDicField(alias = "已开奖")
-	public static final Byte STATUS_CLOSE = 1;
+	public static final Byte STATUS_OPEN = 1;
 }

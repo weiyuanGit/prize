@@ -19,7 +19,7 @@ public class Prize {
 	
 	//一等奖数量
 	@RDSAnnField(column = RDSAnnField.INTEGER)
-	public int fristPrizeNum;
+	public Integer fristPrizeNum;
 	
 	//二等奖id
 	@RDSAnnField(column = RDSAnnField.ID)
@@ -27,7 +27,7 @@ public class Prize {
 	
 	//二等奖数量
 	@RDSAnnField(column = RDSAnnField.INTEGER)
-	public int secondPrizeNum;
+	public Integer secondPrizeNum;
 	
 	//三等奖id
 	@RDSAnnField(column = RDSAnnField.ID)
@@ -35,15 +35,15 @@ public class Prize {
 	
 	//三等奖数量
 	@RDSAnnField(column = RDSAnnField.INTEGER)
-	public int threePrizeNum;
+	public Integer threePrizeNum;
 	
 	//状态
 	@RDSAnnField(column = RDSAnnField.BYTE)
 	public Byte prizeStatus;
 	
 	//指定用户中奖
-	@RDSAnnField(column = RDSAnnField.ID)
-	public Long prizeUserId;
+	@RDSAnnField(column = RDSAnnField.SHORT_TEXT)
+	public String prizeUserId;
 	
 	//开奖方式
 	@RDSAnnField(column = RDSAnnField.BYTE)
@@ -73,7 +73,7 @@ public class Prize {
 	
 	//助力倍数
 	@RDSAnnField(column = RDSAnnField.INTEGER)
-	public int helpTimes;
+	public Integer helpTimes;
 	
 	//是否开启好友助力
 	//true:开启（默认）
