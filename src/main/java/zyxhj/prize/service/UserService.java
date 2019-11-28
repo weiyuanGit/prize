@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
+import com.alibaba.fastjson.JSONArray;
 
 import zyxhj.prize.domain.FriendInvite;
 import zyxhj.prize.domain.PrizeUser;
@@ -86,18 +87,13 @@ public class UserService extends Controller{
 			des = "查询参加本次抽奖的所有用户", //
 			ret = "" //
 	)
-	public List<PrizeUser> getUserListById(
+	public JSONArray getUserListByPrizeId(
 		@P(t = "抽奖活动id")Long PrizeId,
 		Integer count,
 		Integer offset
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
-			List<PrizeUser> userList = new ArrayList<PrizeUser>();
-			List<WinningList> winningList = winningListRepository.getList(conn, EXP.INS().key("prize_id", PrizeId), count, offset, "winning_user_id");
-			for (WinningList winning : winningList) {
-				userList.add(this.getUserById(winning.winningUserId));
-			}
-			return userList;
+			return userRepository.getUserListByPrizeId(conn, PrizeId, count, offset);
 		}
 	}
 	
@@ -166,4 +162,19 @@ public class UserService extends Controller{
 		}
 	}
 	
+	@POSTAPI( //
+			path = "getInviteUserListByUserId", //
+			des = "查询用户指定抽奖活动邀请的好友", //
+			ret = "" //
+	)
+	public JSONArray getInviteUserListByUserId(
+		@P(t = "用户id")Long userId,
+		@P(t = "抽奖活动id")Long prizeId,
+		Integer count,
+		Integer offset
+	) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()) {
+			return userRepository.getInviteUserListByUserId(conn, userId, prizeId, count, offset);
+		}
+	}
 }
