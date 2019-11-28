@@ -14,8 +14,20 @@ public class PrizeUserRepository extends RDSRepository<PrizeUser>{
 		super(PrizeUser.class);
 	}
 	
-	public JSONArray getUserListByPrizeId(DruidPooledConnection conn, Long PrizeId, Integer count, Integer offset) throws ServerException {
+	public JSONArray getUserListByPrizeId(DruidPooledConnection conn, Long PrizeId, Boolean isWinning, Byte winningGrade, Integer count, Integer offset) throws ServerException {
 		String sql = "SELECT * FROM tb_prize_prizeuser u JOIN tb_prize_winninglist w ON u.user_id=w.winning_user_id WHERE w.prize_id=?";
+		if(isWinning!=null&&winningGrade==null) {
+			sql += " and w.is_winning=?";
+			return PrizeUserRepository.sqlGetJSONArray(conn, sql, Arrays.asList(PrizeId,isWinning), count, offset);
+		}
+		if(winningGrade!=null&&isWinning==null) {
+			sql += " and w.winning_grade=?";
+			return PrizeUserRepository.sqlGetJSONArray(conn, sql, Arrays.asList(PrizeId,winningGrade), count, offset);
+		}
+		if(winningGrade!=null&&isWinning!=null) {
+			sql += " and w.is_winning=? and w.winning_grade=?";
+			return PrizeUserRepository.sqlGetJSONArray(conn, sql, Arrays.asList(PrizeId,isWinning,winningGrade), count, offset);
+		}
 		return PrizeUserRepository.sqlGetJSONArray(conn, sql, Arrays.asList(PrizeId), count, offset);
 	}
 	

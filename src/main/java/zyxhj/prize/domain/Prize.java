@@ -102,7 +102,7 @@ public class Prize {
 
 	@AnnDicField(alias = "待开奖")
 	public static final Byte STATUS_OPEN = 0;
-	@AnnDicField(alias = "开奖中")
+	@AnnDicField(alias = "已开奖")
 	public static final Byte STATUS_GO = 1;
 	@AnnDicField(alias = "已关闭")
 	public static final Byte STATUS_CLOSE = 2;

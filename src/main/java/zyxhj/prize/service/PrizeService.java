@@ -228,7 +228,7 @@ public class PrizeService extends Controller{
 	
 	@POSTAPI(//
 			path = "clickPrize", //
-			des = "点击参加抽奖", //
+			des = "参与抽奖", //
 			ret = "" //
 	)
 	public APIResponse clickPrize(

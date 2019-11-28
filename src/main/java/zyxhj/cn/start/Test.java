@@ -5,6 +5,7 @@ import com.alibaba.druid.pool.DruidDataSource;
 import zyxhj.prize.domain.FriendInvite;
 import zyxhj.prize.domain.Prize;
 import zyxhj.prize.domain.PrizeUser;
+import zyxhj.prize.domain.Product;
 import zyxhj.prize.domain.WinningList;
 import zyxhj.utils.data.DataSource;
 import zyxhj.utils.data.rds.RDSUtils;
@@ -27,6 +28,7 @@ public class Test {
 //			RDSUtils.createTableByEntity(dds,Prize.class);
 //			RDSUtils.createTableByEntity(dds,PrizeUser.class);
 //			RDSUtils.createTableByEntity(dds,WinningList.class);
+			RDSUtils.createTableByEntity(dds,Product.class);
 
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -89,11 +89,13 @@ public class UserService extends Controller{
 	)
 	public JSONArray getUserListByPrizeId(
 		@P(t = "抽奖活动id")Long PrizeId,
+		@P(t = "是否中奖", r=false)Boolean isWinning,
+		@P(t = "奖品等级", r=false)Byte winningGrade,
 		Integer count,
 		Integer offset
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
-			return userRepository.getUserListByPrizeId(conn, PrizeId, count, offset);
+			return userRepository.getUserListByPrizeId(conn, PrizeId, isWinning, winningGrade, count, offset);
 		}
 	}
 	
