@@ -1,12 +1,24 @@
 package zyxhj.prize.service;
 
+import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 
 import zyxhj.prize.domain.FriendInvite;
 import zyxhj.prize.domain.PrizeUser;
@@ -39,6 +51,42 @@ public class UserService extends Controller{
 	}
 	
 	@POSTAPI( //
+			path = "getOpenId", //
+			des = "获取openid", //
+			ret = "" //
+	)
+	public JSONObject getOpenId(
+		@P(t = "小程序appId")String appid, 
+		@P(t = "小程序appSecret")String secret, 
+		@P(t = "登录时获取的code")String js_code, 
+		@P(t = "授权类型，此处只需填写 authorization_code")String grant_type
+	) throws Exception {
+		// 创建Httpclient对象
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        // 定义请求的参数
+        URI uri = new URIBuilder("https://api.weixin.qq.com/sns/jscode2session?appid="+appid+"&secret="+secret+"&js_code="+js_code+"&grant_type="+grant_type).build();
+        // 创建http GET请求
+        HttpGet httpGet = new HttpGet(uri);
+        //response 对象
+        CloseableHttpResponse response = null;
+        try {
+        	String content = null;
+            // 执行http get请求
+            response = httpclient.execute(httpGet);
+            // 判断返回状态是否为200
+            if (response.getStatusLine().getStatusCode() == 200) {
+                content = EntityUtils.toString(response.getEntity(), "UTF-8");
+            }
+            return JSONObject.parseObject(content);
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+            httpclient.close();
+        }
+	}
+	
+	@POSTAPI( //
 			path = "userLogin", //
 			des = "用户登录", //
 			ret = "" //
@@ -48,7 +96,7 @@ public class UserService extends Controller{
 		@P(t = "微信OPENID")String openId,
 		@P(t = "用户头像")String userHead,
 		@P(t = "用户名")String userName,
-		@P(t = "用户手机号")String phoneNum
+		@P(t = "用户手机号", r=false)String phoneNum
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
 			PrizeUser user = userRepository.get(conn, EXP.INS().key("open_id", openId));
@@ -61,6 +109,8 @@ public class UserService extends Controller{
 				user.phoneNum = phoneNum;
 				user.createTime = new Date();
 				userRepository.insert(conn, user);
+			}else {
+				updateUserByOpenId(openId, userHead, userName, null);
 			}
 			if(inviterId != null) {
 				createFriendInvite(inviterId, user.userId);
@@ -70,15 +120,15 @@ public class UserService extends Controller{
 	}
 	
 	@POSTAPI( //
-			path = "getUserById", //
-			des = "根据用户id获取用户信息", //
+			path = "getUserByOpenId", //
+			des = "根据用户openId获取用户信息", //
 			ret = "" //
 	)
-	public PrizeUser getUserById(
-		@P(t = "用户id")Long userId
+	public PrizeUser getUserByOpenId(
+		@P(t = "用户openId")String openId
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
-			return userRepository.get(conn, EXP.INS().key("user_id", userId));
+			return userRepository.get(conn, EXP.INS().key("open_id", openId));
 		}
 	}
 	
@@ -100,22 +150,22 @@ public class UserService extends Controller{
 	}
 	
 	@POSTAPI( //
-			path = "updateUserById", //
-			des = "根据用户id修改用户信息", //
+			path = "updateUserByOpenId", //
+			des = "根据用户openId修改用户信息", //
 			ret = "" //
 	)
-	public void updateUserById(
-		@P(t = "用户id")Long userId,
+	public void updateUserByOpenId(
+		@P(t = "用户openId")String openId,
 		@P(t = "用户头像")String userHead,
 		@P(t = "用户名")String userName,
-		@P(t = "用户手机号")String phoneNum
+		@P(t = "用户手机号", r=false)String phoneNum
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()) {
 			PrizeUser t = new PrizeUser();
 			t.userHead = userHead;
 			t.userName = userName;
 			t.phoneNum = phoneNum;
-			userRepository.update(conn, EXP.INS().key("user_id", userId), t, true);
+			userRepository.update(conn, EXP.INS().key("open_id", openId), t, true);
 		}
 	}
 	
