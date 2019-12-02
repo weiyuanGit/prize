@@ -182,6 +182,17 @@ public class UserService extends Controller{
 		}
 	}
 	
+	@POSTAPI( //
+			path = "isCreate", //
+			des = "判断登录用户是否为发布用户", //
+			ret = "" //
+	)
+	public void isCreate(
+		@P(t = "抽奖活动id")Long prizeId,
+		@P(t = "当前登录用户openId")Long openId
+	) throws Exception{
+		
+	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public void createFriendInvite(

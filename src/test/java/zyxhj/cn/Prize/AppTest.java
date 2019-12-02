@@ -44,7 +44,7 @@ public class AppTest {
 //			prizeService.payPrize(winningListRepository.getList(conn, EXP.INS().key("prize_id",1001), 500, 0),conn);
 //		System.out.println(winningListRepository.getList(conn,EXP.INS().key("prize_id",1001), 200, 0));
 			int[] num = {1,2,3};
-			prizeService.payPrize(num,prizeService.getWinningList(1001L, null, null, null, null, null, 500, 0),conn);
+//			prizeService.payPrize(num,prizeService.getWinningList(1001L, null, null, null, null, null, 500, 0),conn);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

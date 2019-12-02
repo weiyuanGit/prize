@@ -1,6 +1,7 @@
 package zyxhj.prize.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,21 +52,21 @@ public class PrizeService extends Controller{
 			des = "创建抽奖", //
 			ret = "" //
 	)
-	public void createProduct(
+	public void createPrize(
 		@P(t = "一等奖id")Long fristPrizeId,
 		@P(t = "一等奖数量")int fristPrizeNum,
-		@P(t = "二等奖id")Long secondPrizeId,
-		@P(t = "二等奖数量")int secondPrizeNum,
-		@P(t = "三等奖id")Long threePrizeId,
-		@P(t = "三等奖数量")int threePrizeNum,
-		@P(t = "指定用户中奖")String prizeUserId,
-		@P(t = "开奖方式")Byte prizeWay,
-		@P(t = "开奖时间")Long prizeTime,
+		@P(t = "二等奖id", r = false)Long secondPrizeId,
+		@P(t = "二等奖数量", r = false)int secondPrizeNum,
+		@P(t = "三等奖id", r = false)Long threePrizeId,
+		@P(t = "三等奖数量", r = false)int threePrizeNum,
+		@P(t = "指定用户中奖", r = false)String prizeUserId,
+		@P(t = "开奖方式", r = false)Byte prizeWay,
+		@P(t = "开奖时间", r = false)Long prizeTime,
 		@P(t = "抽奖说明")String prizeExplain,
 		@P(t = "发起人id")Long createUserId,
 		@P(t = "图文介绍")String imageText,
-		@P(t = "领奖方式")Byte receiveWay,
-		@P(t = "助力倍数")int helpTimes,
+		@P(t = "领奖方式", r = false)Byte receiveWay,
+		@P(t = "助力倍数", r = false)int helpTimes,
 		@P(t = "是否开启好友助力")Boolean friendHelp
 	) throws Exception {
 		Prize p = new Prize();
@@ -144,9 +145,13 @@ public class PrizeService extends Controller{
 		Integer offset
 	) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()){
-			return prizeRepository.getList(conn, EXP.INS().key("prize_status", status==null?Prize.STATUS_GO:status).andKey("prize_way", prizeWay).andKey("create_user_id", createUserId), count, offset);
+			if(status==null && prizeWay==null && createUserId==null) {
+				return prizeRepository.getList(conn, null, count, offset);
+			}
+			return prizeRepository.getList(conn, EXP.INS(false).andKey("prize_status", status).andKey("prize_way", prizeWay).andKey("create_user_id", createUserId), count, offset);
 		}
 	}
+	
 	@POSTAPI(//
 			path = "getPrize", //
 			des = "查询抽奖详情", //
@@ -171,13 +176,14 @@ public class PrizeService extends Controller{
 			return winningListRepository.get(conn, EXP.INS().key("winning_id", id));
 		}
 	}
-	public void setWinningStatus(int grade,List<Long> list) throws Exception {
+	public void setWinningStatus(int grade,List<Long> list,Long pid) throws Exception {
 		try(DruidPooledConnection conn = ds.getConnection()){
 			WinningList winn = new WinningList();
 		    winn.winningStatus = WinningList.STATUS_OPEN;
 		    winn.isWinning = true;
+		    winn.productId = pid;
 		    winn.winningGrade = (byte)grade;
-		    winningListRepository.update(conn, EXP.INS().and(EXP.INS().IN("winning_id", list.toArray())), winn,true);
+		    winningListRepository.update(conn, EXP.INS().and(EXP.IN("winning_id", list.toArray())), winn,true);
 		}
 	}
 	@POSTAPI(//
@@ -269,19 +275,21 @@ public class PrizeService extends Controller{
 					Prize p = new Prize();
 					p.prizeStatus = Prize.STATUS_CLOSE;
 					prizeRepository.update(conn, EXP.INS().key("prize_id", prizeId),p,true);//更改状态
+					prize.prizeStatus = Prize.STATUS_CLOSE;
 					if(p.prizeUserId != null && p.prizeUserId.length()>0) {//有用户指定中奖
-						
+						prize.fristPrizeNum--;
+						setWinningStatus(1,Arrays.asList(prizeId),prize.fristPrizeId);
 					}
 					//抽奖
 					int[] num = {prize.fristPrizeNum,prize.secondPrizeNum,prize.threePrizeNum};
-					payPrize(num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId), 500, 0),conn);
+					payPrize(prize,num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId), 500, 0),conn);
 				}
+				return APIResponse.getNewSuccessResp(prize);
 			}
-			return null;
 	}
-	public void payPrize(int num[],List<WinningList> winnings,DruidPooledConnection conn) throws Exception {
+	public void payPrize(Prize prize,int num[],List<WinningList> winnings,DruidPooledConnection conn) throws Exception {
 		int max = winnings.size();
-		int min = 1;
+		int min = 0;
 		System.out.println(max+"**"+min);
 		List<Long> oneList = new ArrayList<Long>();
 		List<Long> twoList = new ArrayList<Long>();
@@ -306,8 +314,14 @@ public class PrizeService extends Controller{
 			}
 			threeList.add(winnings.get(ranNum).winningId);
 		}
-		setWinningStatus(1, oneList);
-		setWinningStatus(2, twoList);
-		setWinningStatus(3, threeList);
+		if(oneList != null && oneList.size()>0) {
+			setWinningStatus(1, oneList,prize.fristPrizeId);
+		}
+		if(twoList != null && twoList.size()>0) {
+			setWinningStatus(2, twoList,prize.secondPrizeId);
+		}
+		if(threeList != null && threeList.size()>0) {
+			setWinningStatus(3, threeList,prize.threePrizeId);
+		}
 	}
 }

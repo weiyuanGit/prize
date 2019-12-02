@@ -52,6 +52,21 @@ public class ProductService extends Controller{
 		}
 	}
 	
+	/**
+	 * 根据商品id查询商品
+	 */
+	@POSTAPI(//
+			path = "getProductById", 
+			des = "根据商品id查询商品", 
+			ret = "" 
+	)
+	public Product getProductById(
+		@P(t = "商品id")Long productId
+	) throws ServerException, SQLException {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			return productRepository.get(conn, EXP.INS().key("product_id", productId));
+		}
+	}
 //	@POSTAPI(//
 //			path = "delProduct", //
 //			des = "删除商品", //

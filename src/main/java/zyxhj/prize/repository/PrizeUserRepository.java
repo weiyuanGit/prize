@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.alibaba.druid.pool.DruidPooledConnection;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 
 import zyxhj.prize.domain.PrizeUser;
 import zyxhj.utils.api.ServerException;
@@ -35,4 +36,5 @@ public class PrizeUserRepository extends RDSRepository<PrizeUser>{
 		String sql = "SELECT * FROM tb_prize_friendinvite f JOIN tb_prize_prizeuser u ON f.invite_user_id=u.user_id WHERE f.user_id=? and f.prize_id=?";
 		return PrizeUserRepository.sqlGetJSONArray(conn, sql, Arrays.asList(userId,PrizeId), count, offset);
 	}
+	
 }
