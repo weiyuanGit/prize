@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -272,56 +273,69 @@ public class PrizeService extends Controller{
 					return APIResponse.getNewFailureResp(new RC("fail","你没有权限开奖"));
 				}else {
 					//抽奖
-					Prize p = new Prize();
-					p.prizeStatus = Prize.STATUS_CLOSE;
-					prizeRepository.update(conn, EXP.INS().key("prize_id", prizeId),p,true);//更改状态
 					prize.prizeStatus = Prize.STATUS_CLOSE;
-					if(p.prizeUserId != null && p.prizeUserId.length()>0) {//有用户指定中奖
-						prize.fristPrizeNum--;
-						setWinningStatus(1,Arrays.asList(prizeId),prize.fristPrizeId);
+					prizeRepository.update(conn, EXP.INS().key("prize_id", prizeId),prize,true);//更改状态
+					winningListRepository.update(conn, EXP.INS().key("winning_status", WinningList.STATUS_OPEN), EXP.INS().key("prize_id", prizeId));
+					if(prize.prizeUserId != null && prize.prizeUserId.length()>0) {//有用户指定中奖
+						List<WinningList> winningList = getWinningList(prizeId, Long.parseLong(prize.prizeUserId), null, null, null, null, 10, 0);
+						if(winningList!=null) {
+							setStatus(1,prizeId, userId,prize.fristPrizeId);
+							prize.fristPrizeNum--;
+						}
 					}
 					//抽奖
 					int[] num = {prize.fristPrizeNum,prize.secondPrizeNum,prize.threePrizeNum};
-					payPrize(prize,num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId), 500, 0),conn);
+					payPrize(prize,num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId).andKey("is_winning", false), 500, 0),conn);
 				}
 				return APIResponse.getNewSuccessResp(prize);
 			}
 	}
 	public void payPrize(Prize prize,int num[],List<WinningList> winnings,DruidPooledConnection conn) throws Exception {
-		int max = winnings.size();
+		int max = 0;
 		int min = 0;
+		int sum = num[0]+num[1]+num[2];
+		if(winnings.size()<sum) {
+			max = winnings.size()-1;
+		}else {
+			max = sum-1;
+		}
 		System.out.println(max+"**"+min);
 		List<Long> oneList = new ArrayList<Long>();
-		List<Long> twoList = new ArrayList<Long>();
-		List<Long> threeList = new ArrayList<Long>();
-		for(int i=0;i<num[0];i++) {
-			int ranNum = (int) (Math.random()*(max-min)+min);
-			oneList.add(winnings.get(ranNum).winningId);
-		}
-		for(int i=0;i<num[1];i++) {
-			int ranNum = (int) (Math.random()*(max-min)+min);
-			if(oneList.contains(winnings.get(ranNum).winningId)) {
-				i--;
-				continue;
+		Set<Integer> set = new HashSet<Integer>(); 
+		while(true) {
+			int ranNum = (int) (Math.random()*(winnings.size()-1-min)+min);
+			set.add(ranNum);
+			if(set.size()==max+1) {
+				break;
 			}
-			twoList.add(winnings.get(ranNum).winningId);
 		}
-		for(int i=0;i<num[2];i++) {
-			int ranNum = (int) (Math.random()*(max-min)+min);
-			if(oneList.contains(winnings.get(ranNum).winningId)||twoList.contains(winnings.get(ranNum).winningId)) {
-				i--;
-				continue;
+		for (Integer integer : set) {
+			System.out.println(prize.secondPrizeNum);
+			System.out.println(winnings.get(integer).winningUserId);
+			oneList.add(winnings.get(integer).winningId);
+			if(prize.fristPrizeNum!=0) {
+				setStatus(1, prize.prizeId, winnings.get(integer).winningUserId, prize.fristPrizeId);
+				prize.fristPrizeNum--;
+				
+			}else if(prize.secondPrizeNum!=0) {
+				setStatus(2, prize.prizeId, winnings.get(integer).winningUserId, prize.secondPrizeId);
+				prize.secondPrizeNum--;
+			}else {
+				setStatus(3, prize.prizeId, winnings.get(integer).winningUserId, prize.threePrizeId);
+				prize.threePrizeNum--;
 			}
-			threeList.add(winnings.get(ranNum).winningId);
 		}
-		if(oneList != null && oneList.size()>0) {
-			setWinningStatus(1, oneList,prize.fristPrizeId);
-		}
-		if(twoList != null && twoList.size()>0) {
-			setWinningStatus(2, twoList,prize.secondPrizeId);
-		}
-		if(threeList != null && threeList.size()>0) {
-			setWinningStatus(3, threeList,prize.threePrizeId);
+		
+		
+	}
+	
+	public void setStatus(int grade,Long prizeId, Long userId,Long pid) throws Exception {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			WinningList winn = new WinningList();
+		    winn.isWinning = true;
+		    winn.productId = pid;
+		    winn.winningGrade = (byte)grade;
+		    winningListRepository.update(conn, EXP.INS().key("prize_id", prizeId).andKey("winning_user_id", userId), winn,true);
 		}
 	}
 }

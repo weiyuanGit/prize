@@ -67,6 +67,28 @@ public class ProductService extends Controller{
 			return productRepository.get(conn, EXP.INS().key("product_id", productId));
 		}
 	}
+	
+	/**
+	 * 修改商品信息
+	 */
+	@POSTAPI(//
+			path = "updateProductById", 
+			des = "修改商品信息", 
+			ret = "" 
+	)
+	public void updateProductById(
+		@P(t = "商品id")Long productId,
+		@P(t = "商品名称", r = false)String productName,
+		@P(t = "商品图片", r = false)String productImg
+	) throws ServerException, SQLException {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			Product t = new Product();
+			t.productName = productName;
+			t.productImg = productImg;
+			productRepository.update(conn, EXP.INS().key("product_id", productId), t, true);
+		}
+	}
+	
 //	@POSTAPI(//
 //			path = "delProduct", //
 //			des = "删除商品", //
