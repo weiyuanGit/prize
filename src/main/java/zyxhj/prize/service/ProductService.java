@@ -1,6 +1,7 @@
 package zyxhj.prize.service;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -89,6 +90,55 @@ public class ProductService extends Controller{
 		}
 	}
 	
+	/**
+	 * 添加商品信息
+	 */
+	@POSTAPI(//
+			path = "createProducts", 
+			des = "添加商品信息", 
+			ret = "" 
+	)
+	public List<Long> createProducts(
+		@P(t = "商品名称1")String productName1,
+		@P(t = "商品图片1")String productImg1,
+		@P(t = "商品名称2", r = false)String productName2,
+		@P(t = "商品图片2", r = false)String productImg2,
+		@P(t = "商品名称3", r = false)String productName3,
+		@P(t = "商品图片3", r = false)String productImg3
+	) throws ServerException, SQLException {
+		try(DruidPooledConnection conn = ds.getConnection()){
+			Product t1 = new Product();
+			Product t2 = null;
+			Product t3 = null;
+			t1.productId = IDUtils.getSimpleId();
+			t1.productName = productName1;
+			t1.productImg = productImg1;
+			productRepository.insert(conn, t1);
+			if(productImg2!=null && productName2!=null) {
+				t2 = new Product();
+				t2.productId = IDUtils.getSimpleId();
+				t2.productName = productName2;
+				t2.productImg = productImg2;
+				productRepository.insert(conn, t2);
+			}
+			if(productImg3!=null && productName3!=null) {
+				t3 = new Product();
+				t3.productId = IDUtils.getSimpleId();
+				t3.productName = productName3;
+				t3.productImg = productImg3;
+				productRepository.insert(conn, t3);
+			}
+			if(t2==null) {
+				return Arrays.asList(t1.productId);
+			}else{
+				if(t3==null) {
+					return Arrays.asList(t1.productId,t2.productId);
+				}else {
+					return Arrays.asList(t1.productId, t2.productId, t3.productId);
+				}
+			}
+		}
+	}
 //	@POSTAPI(//
 //			path = "delProduct", //
 //			des = "删除商品", //

@@ -276,16 +276,20 @@ public class PrizeService extends Controller{
 					prize.prizeStatus = Prize.STATUS_CLOSE;
 					prizeRepository.update(conn, EXP.INS().key("prize_id", prizeId),prize,true);//更改状态
 					winningListRepository.update(conn, EXP.INS().key("winning_status", WinningList.STATUS_OPEN), EXP.INS().key("prize_id", prizeId));
-					if(prize.prizeUserId != null && prize.prizeUserId.length()>0) {//有用户指定中奖
-						List<WinningList> winningList = getWinningList(prizeId, Long.parseLong(prize.prizeUserId), null, null, null, null, 10, 0);
-						if(winningList!=null) {
-							setStatus(1,prizeId, userId,prize.fristPrizeId);
-							prize.fristPrizeNum--;
-						}
+					List<WinningList> winningList = getWinningList(prizeId, Long.parseLong(prize.prizeUserId), null, null, null, null, 10, 0);
+					if(prize.prizeUserId != null && prize.prizeUserId.length()>0 && winningList!=null && winningList.size()!=0) {//有用户指定中奖
+						System.out.println(winningList.size());
+						System.out.println(winningList.get(0).winningUserId);
+						setStatus(1,prizeId, userId,prize.fristPrizeId);
+						prize.fristPrizeNum--;
 					}
 					//抽奖
 					int[] num = {prize.fristPrizeNum,prize.secondPrizeNum,prize.threePrizeNum};
-					payPrize(prize,num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId).andKey("is_winning", false), 500, 0),conn);
+					System.out.println("================");
+					System.out.println(num[0]);
+					System.out.println(num[1]);
+					System.out.println(num[2]);
+					payPrize(prize,num,winningListRepository.getList(conn, EXP.INS().key("prize_id", prize.prizeId).andKey("is_winning", false), 10, 0),conn);
 				}
 				return APIResponse.getNewSuccessResp(prize);
 			}
@@ -294,6 +298,8 @@ public class PrizeService extends Controller{
 		int max = 0;
 		int min = 0;
 		int sum = num[0]+num[1]+num[2];
+		System.out.println("=================");
+		System.out.println(winnings.size());
 		if(winnings.size()<sum) {
 			max = winnings.size()-1;
 		}else {
@@ -302,8 +308,9 @@ public class PrizeService extends Controller{
 		System.out.println(max+"**"+min);
 		List<Long> oneList = new ArrayList<Long>();
 		Set<Integer> set = new HashSet<Integer>(); 
+		set.add(max);
 		while(true) {
-			int ranNum = (int) (Math.random()*(winnings.size()-1-min)+min);
+			int ranNum = (int) (Math.random()*(winnings.size()-1-min));
 			set.add(ranNum);
 			if(set.size()==max+1) {
 				break;
@@ -320,9 +327,11 @@ public class PrizeService extends Controller{
 			}else if(prize.secondPrizeNum!=0) {
 				setStatus(2, prize.prizeId, winnings.get(integer).winningUserId, prize.secondPrizeId);
 				prize.secondPrizeNum--;
-			}else {
+			}else if(prize.threePrizeNum!=0){
 				setStatus(3, prize.prizeId, winnings.get(integer).winningUserId, prize.threePrizeId);
 				prize.threePrizeNum--;
+			}else {
+				return;
 			}
 		}
 		

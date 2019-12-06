@@ -13,7 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <main.verticle>xhj.cn.start.PrizeVerticle</main.verticle>
+    <main.verticle>zyxhj.cn.start.PrizeVerticle</main.verticle>
   </properties>
 
   <dependencies>
