@@ -56,15 +56,51 @@ public class UserService extends Controller{
 			ret = "" //
 	)
 	public JSONObject getOpenId(
-		@P(t = "小程序appId")String appid, 
-		@P(t = "小程序appSecret")String secret, 
-		@P(t = "登录时获取的code")String js_code, 
+		@P(t = "微信小程序appId")String appid, 
+		@P(t = "微信小程序appSecret")String secret, 
+		@P(t = "微信登录时获取的code")String js_code, 
 		@P(t = "授权类型，此处只需填写 authorization_code")String grant_type
 	) throws Exception {
 		// 创建Httpclient对象
         CloseableHttpClient httpclient = HttpClients.createDefault();
         // 定义请求的参数
         URI uri = new URIBuilder("https://api.weixin.qq.com/sns/jscode2session?appid="+appid+"&secret="+secret+"&js_code="+js_code+"&grant_type="+grant_type).build();
+        // 创建http GET请求
+        HttpGet httpGet = new HttpGet(uri);
+        //response 对象
+        CloseableHttpResponse response = null;
+        try {
+        	String content = null;
+            // 执行http get请求
+            response = httpclient.execute(httpGet);
+            // 判断返回状态是否为200
+            if (response.getStatusLine().getStatusCode() == 200) {
+                content = EntityUtils.toString(response.getEntity(), "UTF-8");
+            }
+            return JSONObject.parseObject(content);
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+            httpclient.close();
+        }
+	}
+	
+	@POSTAPI( //
+			path = "ttGetOpenId", //
+			des = "头条获取openid", //
+			ret = "" //
+	)
+	public JSONObject ttGetOpenId(
+		@P(t = "头条小程序appId")String appid, 
+		@P(t = "头条小程序appSecret")String secret, 
+		@P(t = "头条登录时获取的code")String code, 
+		@P(t = "授权类型，此处只需填写 authorization_code")String anonymous_code
+	) throws Exception {
+		// 创建Httpclient对象
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        // 定义请求的参数
+        URI uri = new URIBuilder("https://developer.toutiao.com/api/apps/jscode2session?appid="+appid+"&secret="+secret+"&code="+code+"&anonymous_code="+anonymous_code).build();
         // 创建http GET请求
         HttpGet httpGet = new HttpGet(uri);
         //response 对象
