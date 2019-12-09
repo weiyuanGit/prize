@@ -68,7 +68,8 @@ public class PrizeService extends Controller{
 		@P(t = "图文介绍")String imageText,
 		@P(t = "领奖方式", r = false)Byte receiveWay,
 		@P(t = "助力倍数", r = false)int helpTimes,
-		@P(t = "是否开启好友助力")Boolean friendHelp
+		@P(t = "是否开启好友助力")Boolean friendHelp,
+		@P(t = "联系人微信")String redPacket
 	) throws Exception {
 		Prize p = new Prize();
 		p.prizeId = IDUtils.getSimpleId();
@@ -76,6 +77,8 @@ public class PrizeService extends Controller{
 		p.fristPrizeNum = fristPrizeNum;
 		p.secondPrizeId = secondPrizeId;
 		p.secondPrizeNum = secondPrizeNum;
+		p.threePrizeId = threePrizeId;
+		p.threePrizeNum = threePrizeNum;
 		p.prizeUserId = prizeUserId;
 		p.prizeStatus = Prize.STATUS_OPEN;
 		p.prizeWay = Prize.PRIZEWAY_TIMEING;
@@ -87,6 +90,7 @@ public class PrizeService extends Controller{
 		p.helpTimes = helpTimes;
 		p.friendHelp = friendHelp;
 		p.createTime = new Date();
+		p.redPacket = redPacket;
 		try(DruidPooledConnection conn = ds.getConnection()){
 			prizeRepository.insert(conn, p);
 		}
