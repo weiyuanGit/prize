@@ -312,13 +312,13 @@ public class PrizeService extends Controller{
 		System.out.println(max+"**"+min);
 		List<Long> oneList = new ArrayList<Long>();
 		Set<Integer> set = new HashSet<Integer>(); 
-		set.add(max);
+		set.add(winnings.size()-1);
 		while(true) {
-			int ranNum = (int) (Math.random()*(winnings.size()-1-min));
-			set.add(ranNum);
 			if(set.size()==max+1) {
 				break;
 			}
+			int ranNum = (int) (Math.random()*(winnings.size()-1-min));
+			set.add(ranNum);
 		}
 		for (Integer integer : set) {
 			System.out.println(prize.secondPrizeNum);
